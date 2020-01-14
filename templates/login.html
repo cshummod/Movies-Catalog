@@ -1,0 +1,63 @@
+<head>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://apis.google.com/js/client:platform.js?onload=start" async defer></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
+
+    <script>
+        function start() {
+            gapi.load('auth2', function () {
+                auth2 = gapi.auth2.init({
+                    client_id: 'YOUR CLIENT ID HERE'
+                });
+            });
+        }
+    </script>
+</head>
+
+
+<body>
+    <div class="container">
+        <div class="row h-20">
+            <div class="col-md-8 mx-auto bg-dark p-4" align="center">
+                <img src="./static/logo.png" alt="" width="80" height="80">
+                <h2 class="d-inline text-light font-weight-bolder">Movies Catalog</h2><br>
+                <button id="signinButton" class="btn btn-primary m-3">Google SignIn</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+
+<script>
+    $('#signinButton').click(function () {
+        function signInCallback(authResult) {
+            if (authResult['code']) {
+                $('#signinButton').attr('style', 'display: none');
+                $.ajax({
+                    type: 'POST',
+                    url: '/gconnect?state={{STATE}}',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    contentType: 'application/octet-stream; charset=utf-8',
+                    success: function (result) {
+                        $('#result').html('Login Successful!</br>' + result + '</br>Redirecting...')
+                        setTimeout(function () {
+                            window.location.href = "/";
+                        }, 2000);
+                    },
+                    processData: false,
+                    data: authResult['code']
+                });
+            } else {
+                // handle error
+                console.log('There was an error: ' + authResult['error']);
+                $('#result').html('Failed to make a server-side call. Check your configuration and console.');
+            }
+        }
+        auth2.grantOfflineAccess().then(signInCallback);
+    });
+</script>

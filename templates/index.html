@@ -1,0 +1,39 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+
+
+<div class="container bg-light mt-3">
+    <div class="row ">
+        <div class="col-md-3 p-3">
+            <h2 class="text-danger font-weight-bolder mb-4"> Categories </h2>
+            {% for category in categories %}
+            <p>
+                <a href='{{url_for("showItems", category_id=category.id)}}' class="text-primary">
+                    {{category.name}}
+                </a>
+            </p>
+            {% endfor %}
+        </div>
+
+        <div class="col-md-6 border-left p-3">
+            <h2 class="text-danger font-weight-bolder mb-4"> Latest Titles </h2>
+            {% for item in items %}
+            <p class="text-primary">
+                <a
+                    href="{{url_for('showCategoryItem',category_id = item.category_id, item_id = item.id)}}">{{item.title}}</a>
+                <span class="text-secondary">({{item.category.name}})</span>
+            </p>
+            {% endfor %}
+        </div>
+        <div class="col-md-3 p-3">
+            {%if 'username' in session %}
+            <a href="{{url_for('newCategoryItem',category_id = 1,)}}" class="btn btn-primary"><i
+                    class="far fa-plus-square"></i> Add Title</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

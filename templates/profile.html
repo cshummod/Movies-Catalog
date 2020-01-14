@@ -1,0 +1,32 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+
+<div class="container bg-light mt-2" style="opacity: 0.92;">
+    <div class="row">
+        <img src="{{picture}}" alt="user avatar" width="250" height="300">
+        <div class="col-md-8 m-2 p-3">
+            <div class="row">
+                <h4 class="bg-danger text-light p-1">{{name}}</h4>
+            </div>
+            <div class="row">
+                <h6 class="text-secondary">{{email}}</h6>
+            </div>
+            <h5 class="text-secondary mt-3">My Titles:</h5>
+            <ul class="list-unstyled">
+                {% for item in items %}
+                <li class="text-primary">
+                    <a
+                        href="{{url_for('showCategoryItem',category_id = item.category_id, item_id = item.id)}}">{{item.title}}</a>
+                    <span class="text-secondary">({{item.category.name}})</span>
+                </li>
+                {% endfor %}
+            </ul>
+
+
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

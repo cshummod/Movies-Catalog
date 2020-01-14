@@ -1,0 +1,17 @@
+<nav class="navbar bg-dark navbar-dark">
+    <a class="navbar-brand" href="{{url_for('showCategories')}}">
+        <img src="{{ url_for('static', filename='logo.png') }}" width="30" height="30" class="d-inline-block align-top"
+            alt="Logo">
+        <span class="font-weight-bolder">Movies Catalog</span>
+    </a>
+    <ul class="navbar-nav">
+        <li class="nav-item ml-5">
+            {%if 'username' not in session %}
+            <a class="btn btn-success" href="{{url_for('showLogin')}}">Login</a>
+            {% else %}
+            <a class="text-light d-inline mr-5" href="{{url_for('showUserProfile')}}">{{name}}</a>
+            <a class="btn btn-danger" href="{{url_for('gdisconnect')}}">Logout</a>
+            {% endif %}
+        </li>
+    </ul>
+</nav>

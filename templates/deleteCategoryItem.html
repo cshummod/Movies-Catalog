@@ -1,0 +1,17 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html"%}
+
+<div class="container bg-light" style="opacity: .92;">
+    <h2 class="text-primary p-2" align="center">Are you sure you want to delete {{item.name}}?</h2>
+    <div class="row justify-content-center">
+        <form action="#" method='post' class="m-3">
+            <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+        <a href='{{url_for('showCategoryItem',category_id=item.category.id,item_id=item.id)}}'>
+            <button class="btn btn-success m-3">Cancel</button>
+        </a>
+    </div>
+</div>
+
+{% endblock %}
