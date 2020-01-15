@@ -12,6 +12,8 @@ import httplib2
 import json
 from flask import (Flask, render_template, request,
                    redirect, jsonify, url_for, flash)
+from functools import wraps
+
 
 app = Flask(__name__)
 
@@ -27,6 +29,22 @@ Base.metadata.bind = engine
 
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
+
+
+def login_required(f):
+    """ Defing a login decrator to avoid checks repetition
+
+    Returns:
+        login page with session state object
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'username' in login_session:
+            return f(*args, **kwargs)
+        else:
+            flash("You are not allowed to access there")
+            return redirect('/login')
+    return decorated_function
 
 
 @app.route('/login')
@@ -294,6 +312,7 @@ def showItems(category_id):
 
 
 @app.route('/profile')
+@login_required
 def showUserProfile():
     """ Show user profile
 
@@ -301,8 +320,6 @@ def showUserProfile():
         OnSuccess: HTML page with user info
         OnFailure: Redirt to login page
     """
-    if 'username' not in login_session:
-        return redirect('/login')
     name = login_session['username']
     email = login_session['email']
     picture = login_session['picture']
@@ -314,6 +331,7 @@ def showUserProfile():
 
 
 @app.route('/categories/<int:category_id>/items/new/', methods=['GET', 'POST'])
+@login_required
 def newCategoryItem(category_id):
     """ Create a new category item
 
@@ -322,8 +340,6 @@ def newCategoryItem(category_id):
     Returns:
         a HTML page to create a new category item
     """
-    if 'username' not in login_session:
-        return redirect('/login')
     categories = session.query(Category).all()
     category = session.query(Category).filter_by(id=category_id).one()
     if request.method == 'POST':
@@ -364,6 +380,7 @@ def showCategoryItem(category_id, item_id):
 
 @app.route('/categories/<int:category_id>/items/<int:item_id>/edit',
            methods=['GET', 'POST'])
+@login_required
 def editCategoryItem(category_id, item_id):
     """ Edit a category item
 
@@ -373,8 +390,6 @@ def editCategoryItem(category_id, item_id):
     Returns:
         a HTML page to edit specific category item
     """
-    if 'username' not in login_session:
-        return redirect('/login')
     editedItem = session.query(Item).filter_by(id=item_id).one()
     category = session.query(Category).filter_by(id=category_id).one()
     if login_session['user_id'] != editedItem.user_id:
@@ -406,6 +421,7 @@ def editCategoryItem(category_id, item_id):
 
 @app.route('/categories/<int:category_id>/items/<int:item_id>/delete',
            methods=['GET', 'POST'])
+@login_required
 def deleteCategoryItem(category_id, item_id):
     """ Delete a category item
 
@@ -415,8 +431,6 @@ def deleteCategoryItem(category_id, item_id):
     Returns:
         a HTML page to delete specific category item
     """
-    if 'username' not in login_session:
-        return redirect('/login')
     category = session.query(Category).filter_by(id=category_id).one()
     itemToDelete = session.query(Item).filter_by(id=item_id).one()
     if login_session['user_id'] != itemToDelete.user_id:
