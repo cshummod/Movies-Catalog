@@ -29,18 +29,26 @@ DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
 
-# Create anti-forgery state token
 @app.route('/login')
 def showLogin():
+    """ Create anti-forgery state token
+
+    Returns:
+        login page with session state object
+    """
     state = ''.join(random.choice(
         string.ascii_uppercase + string.digits) for x in range(32))
     login_session['state'] = state
-    # return "The current session state is %s" % login_session['state']
     return render_template('login.html', STATE=state)
 
 
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
+    """ Connect the user using Google Sign-in
+
+    Returns:
+        a welcome message if the process succeed
+    """
     # Validate state token
     if request.args.get('state') != login_session['state']:
         response = make_response(json.dumps('Invalid state parameter.'), 401)
@@ -128,10 +136,16 @@ def gconnect():
     flash("you are now logged in as %s" % login_session['username'])
     return output
 
-# User Helper Functions
-
 
 def createUser(login_session):
+    """ Create a new user in the database
+
+    Args:
+        login_session: session object with user data
+
+    Returns:
+        user id
+    """
     newUser = User(name=login_session['username'], email=login_session[
                    'email'], picture=login_session['picture'])
     session.add(newUser)
@@ -141,6 +155,14 @@ def createUser(login_session):
 
 
 def getUserID(email):
+    """ Get user id
+
+    Args:
+        email: string
+
+    Returns:
+        a user id for the given email
+    """
     try:
         user = session.query(User).filter_by(email=email).one()
         return user.id
@@ -148,9 +170,14 @@ def getUserID(email):
         return None
 
 
-# DISCONNECT - Revoke a current user's token and reset their login_session
 @app.route('/gdisconnect')
 def gdisconnect():
+    """ DISCONNECT - Revoke a current user's token and reset their login_session
+
+    Returns:
+        OnSuccess: home page
+        OnFailure: response message
+    """
     # Only disconnect a connected user.
     access_token = login_session.get('access_token')
     if access_token is None:
@@ -179,59 +206,103 @@ def gdisconnect():
         return response
 
 
-# View all categories
 @app.route('/api/categories')
 def categoriesJSON():
+    """ View all categories
+
+    Returns:
+        a json object with all categories in the database
+    """
     categories = session.query(Category).all()
     return jsonify(categories=[category.serialize for category in categories])
 
 
-# View specific category
 @app.route('/api/categories/<int:category_id>')
 def categoryJSON(category_id):
+    """ View specific category
+
+    Args:
+        category_id : int
+    Returns:
+        a json object with specific category
+    """
     category = session.query(Category).filter_by(id=category_id).one()
     return jsonify(category=category.serialize)
 
 
-# View category items
 @app.route('/api/categories/<int:category_id>/items')
 def categoryItemsJSON(category_id):
+    """ View category items
+
+    Args:
+        category_id : int
+    Returns:
+        a json object with specific category items
+    """
     category = session.query(Category).filter_by(id=category_id).one()
     items = session.query(Item).filter_by(category_id=category_id).all()
     return jsonify(CategoryItems=[item.serialize for item in items])
 
 
-# View specific item
 @app.route('/api/categories/<int:category_id>/items/<int:item_id>')
 def categoryItemJSON(category_id, item_id):
+    """ View specific categor item
+
+    Args:
+        category_id : int
+        item_id : int
+    Returns:
+        a json object with specific category item
+    """
     category_item = session.query(Item).filter_by(id=item_id).one()
     return jsonify(category_item=category_item.serialize)
 
 
-# Show all categories
 @app.route('/')
 @app.route('/index')
 @app.route('/categories')
 def showCategories():
+    """ Show all categories
+
+    Returns:
+        a HTML page with all categoris and the lates items add to the database
+    """
     categories = session.query(Category).order_by(asc(Category.name))
     items = session.query(Item).order_by(desc(Item.id))
+    if 'username' not in login_session:
+        return render_template('index.html',
+                               categories=categories, items=items)
     name = login_session['username']
     return render_template('index.html',
                            categories=categories, items=items, name=name)
 
 
-# Show category items
+#
 @app.route('/categories/<int:category_id>/')
 @app.route('/categories/<int:category_id>/items/')
 def showItems(category_id):
+    """ Show category items
+
+    Args:
+        category_id : int
+    Returns:
+        a HTML page with all category items
+    """
     category = session.query(Category).filter_by(id=category_id).one()
     items = session.query(Item).filter_by(category_id=category_id).all()
     return render_template('items.html', items=items, category=category)
 
 
-# Show user profile
 @app.route('/profile')
 def showUserProfile():
+    """ Show user profile
+
+    Returns:
+        OnSuccess: HTML page with user info
+        OnFailure: Redirt to login page
+    """
+    if 'username' not in login_session:
+        return redirect('/login')
     name = login_session['username']
     email = login_session['email']
     picture = login_session['picture']
@@ -242,9 +313,15 @@ def showUserProfile():
                            email=email, picture=picture, items=items)
 
 
-# Create a new category item
 @app.route('/categories/<int:category_id>/items/new/', methods=['GET', 'POST'])
 def newCategoryItem(category_id):
+    """ Create a new category item
+
+    Args:
+        category_id : int
+    Returns:
+        a HTML page to create a new category item
+    """
     if 'username' not in login_session:
         return redirect('/login')
     categories = session.query(Category).all()
@@ -268,9 +345,16 @@ def newCategoryItem(category_id):
                                categories=categories, category_id=category_id)
 
 
-# Show specific category item
 @app.route('/categories/<int:category_id>/items/<int:item_id>/')
 def showCategoryItem(category_id, item_id):
+    """ Show specific category item
+
+    Args:
+        category_id : int
+        item_id : int
+    Returns:
+        a HTML page that shows specific category item
+    """
     category = session.query(Category).filter_by(id=category_id).one()
     item = session.query(Item).filter_by(id=item_id).one()
     creator = login_session["username"]
@@ -278,10 +362,17 @@ def showCategoryItem(category_id, item_id):
                            category_id=category.id, item=item, creator=creator)
 
 
-# Edit a category item
 @app.route('/categories/<int:category_id>/items/<int:item_id>/edit',
            methods=['GET', 'POST'])
 def editCategoryItem(category_id, item_id):
+    """ Edit a category item
+
+    Args:
+        category_id : int
+        item_id : int
+    Returns:
+        a HTML page to edit specific category item
+    """
     if 'username' not in login_session:
         return redirect('/login')
     editedItem = session.query(Item).filter_by(id=item_id).one()
@@ -313,10 +404,17 @@ def editCategoryItem(category_id, item_id):
                                item=editedItem)
 
 
-# Delete a category item
 @app.route('/categories/<int:category_id>/items/<int:item_id>/delete',
            methods=['GET', 'POST'])
 def deleteCategoryItem(category_id, item_id):
+    """ Delete a category item
+
+    Args:
+        category_id : int
+        item_id : int
+    Returns:
+        a HTML page to delete specific category item
+    """
     if 'username' not in login_session:
         return redirect('/login')
     category = session.query(Category).filter_by(id=category_id).one()
